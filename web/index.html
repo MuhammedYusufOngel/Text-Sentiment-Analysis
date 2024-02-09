@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="iso-8859-9">
+    <title>Text Sentiment Analysis</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>Text Sentiment Analysis</h1>
+    <label for="sentence">Enter the Sentence whose Sentiment Value You Want to See in the Box Below (Enter a Turkish sentence)</label>
+    <textarea class="form-control"
+              id="sentence"></textarea>
+    <br/>
+    <button class="btn btn-success" onclick="olc()">Get Result</button>
+    <h3 id="sonuc"></h3>
+</div>
+<script>
+    let model;
+    let word2index;
+
+    async function modelYukle() {
+        const modelPath = 'js_model/model.json'; // Modelinizin adresine göre güncelleyin
+        model = await tf.loadLayersModel(modelPath);
+    }
+
+    modelYukle().then(function () {
+        console.log('Model installed successfully');
+    }).catch(function (error) {
+        console.error('Error when model is installing:', error);
+    });
+
+    function olc() {
+        const yorum = $('#sentence').val();
+
+        let tens = [];
+
+        for (let i = 0; i < 50; i++) {
+            tens[i] = 0;
+        }
+
+        const comment_words = yorum.split(' ');
+        $.each(comment_words, function (index, value) {
+            console.log(index + ": " + value);
+            if (index < 50) {
+                const newNumber = 50 - comment_words.length + index;
+                tens[newNumber] = word2index[value.toLowerCase()] || 0;
+            }
+        });
+
+        if (model) {
+            const _tokens = tf.tensor([tens]);
+            model.predict(_tokens).data().then(predictions => {
+                console.log('Predicted Score :: ', predictions[0].toFixed(4) * 100);
+                $('#sonuc').html('Evaluated Result :: ' + parseFloat(predictions[0].toFixed(4) * 100).toString().substring(0, 5));
+            });
+        } else {
+            console.error('Error when model is installing.');
+        }
+    }
+
+    $.getJSON("js_model/tokenizer.json", function (data) {
+        // console.log(data);
+        word2index = data;
+    });
+
+</script>
+</body>
+</html>
